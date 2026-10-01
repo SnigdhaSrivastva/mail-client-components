@@ -1,4 +1,9 @@
-# Python Application Template: A Component-Based Mail Client
+# Mail Client Components: Component-Based Python Mail Client
+
+> **Team project**, NYU Open Source Software Development (Fall 2025), built on the course template by [@ivanearisty](https://github.com/ivanearisty) with teammates including [@austinhuang0131](https://github.com/austinhuang0131).
+>
+> **My contributions** ([10 commits](https://github.com/SnigdhaSrivastva/mail-client-components/commits/main?author=SnigdhaSrivastva), ~925 lines): unit tests that raised `src` coverage for CI, CircleCI test and coverage fixes, ruff lint fixes in the Gmail implementation, keeping `token.json` out of test runs, and mypy configuration for the generated OpenAPI client.
+
 
 [![CircleCI](https://circleci.com/gh/ivanearisty/oss-taapp.svg?style=shield)](https://circleci.com/gh/ivanearisty/oss-taapp)
 [![Coverage](https://img.shields.io/badge/coverage-85%2B%25-brightgreen)](https://circleci.com/gh/ivanearisty/oss-taapp)
