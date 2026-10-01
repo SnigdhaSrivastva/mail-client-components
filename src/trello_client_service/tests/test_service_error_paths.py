@@ -13,7 +13,6 @@ from trello_client_api import (
 
 from trello_client_service.main import app
 
-
 client = TestClient(app)
 
 

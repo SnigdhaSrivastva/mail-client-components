@@ -77,7 +77,8 @@ class TrelloClientImpl(TrelloClient):
 
         """
         if not self.token:
-            raise TrelloAuthenticationError("No token provided")
+            msg = "No token provided"
+            raise TrelloAuthenticationError(msg)
 
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 

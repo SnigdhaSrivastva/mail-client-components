@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 
 class TrelloBoard(BaseModel):
+    """Represents a Trello board."""
+
     @classmethod
     def from_generated(cls, generated_board: object) -> TrelloBoard:
         """Convert from generated client board model to TrelloBoard."""
@@ -19,7 +21,6 @@ class TrelloBoard(BaseModel):
             url=getattr(generated_board, "url", None),
             created_at=getattr(generated_board, "created_at", None),
         )
-    """Represents a Trello board."""
 
     id: str
     name: str
@@ -30,6 +31,8 @@ class TrelloBoard(BaseModel):
 
 
 class TrelloList(BaseModel):
+    """Represents a Trello list within a board."""
+
     @classmethod
     def from_generated(cls, generated_list: object) -> TrelloList:
         """Convert from generated client list model to TrelloList."""
@@ -40,7 +43,6 @@ class TrelloList(BaseModel):
             position=getattr(generated_list, "position", 0.0),
             closed=getattr(generated_list, "closed", False),
         )
-    """Represents a Trello list within a board."""
 
     id: str
     name: str
@@ -50,6 +52,8 @@ class TrelloList(BaseModel):
 
 
 class TrelloCard(BaseModel):
+    """Represents a Trello card within a list."""
+
     @classmethod
     def from_generated(cls, generated_card: object) -> TrelloCard:
         """Convert from generated client card model to TrelloCard."""
@@ -65,7 +69,6 @@ class TrelloCard(BaseModel):
             url=getattr(generated_card, "url", None),
             created_at=getattr(generated_card, "created_at", None),
         )
-    """Represents a Trello card within a list."""
 
     id: str
     name: str
@@ -80,6 +83,8 @@ class TrelloCard(BaseModel):
 
 
 class TrelloUser(BaseModel):
+    """Represents a Trello user."""
+
     @classmethod
     def from_generated(cls, generated_user: object) -> TrelloUser:
         """Convert from generated client user model to TrelloUser."""
@@ -89,7 +94,6 @@ class TrelloUser(BaseModel):
             full_name=getattr(generated_user, "full_name", None),
             email=getattr(generated_user, "email", None),
         )
-    """Represents a Trello user."""
 
     id: str
     username: str

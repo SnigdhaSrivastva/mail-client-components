@@ -116,7 +116,11 @@ class GmailClient(mail_client_api.Client):
         # local environments. Avoid persisting tokens when invoked by the
         # CI-only helper script used in tests (main_ci.py) to prevent a
         # stray token.json from affecting other tests.
-        if self._should_persist_token(interactive, creds.refresh_token, token_path):
+        if self._should_persist_token(
+            interactive=interactive,
+            has_refresh_token=bool(creds.refresh_token),
+            token_path=token_path,
+        ):
             self._save_token(creds, token_path)
 
         self.service = build("gmail", "v1", credentials=creds)
@@ -135,7 +139,7 @@ class GmailClient(mail_client_api.Client):
         )
         return flow.run_local_server(port=0)  # type: ignore[no-any-return]
 
-    def _should_persist_token(self, interactive: bool, has_refresh_token: bool, token_path: str) -> bool:
+    def _should_persist_token(self, *, interactive: bool, has_refresh_token: bool, token_path: str) -> bool:
         """Decide whether to persist the token to disk.
 
         Extracted from __init__ to reduce cyclomatic complexity and to satisfy
@@ -144,10 +148,7 @@ class GmailClient(mail_client_api.Client):
         if not (interactive or (has_refresh_token and not Path(token_path).exists())):
             return False
 
-        try:
-            invoking_script = Path(sys.argv[0]).name
-        except Exception:
-            invoking_script = ""
+        invoking_script = Path(sys.argv[0]).name if sys.argv else ""
 
         return invoking_script != "main_ci.py"
 

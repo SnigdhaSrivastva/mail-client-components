@@ -26,9 +26,13 @@ def test_from_generated_helpers_cover_all_models() -> None:
     card = TrelloCard.from_generated(card_src)
     user = TrelloUser.from_generated(user_src)
 
-    assert board.id == "b1" and board.name == "B"
-    assert tlist.id == "l1" and tlist.board_id == "b1"
-    assert card.id == "c1" and card.list_id == "l1" and card.board_id == "b1"
+    assert board.id == "b1"
+    assert board.name == "B"
+    assert tlist.id == "l1"
+    assert tlist.board_id == "b1"
+    assert card.id == "c1"
+    assert card.list_id == "l1"
+    assert card.board_id == "b1"
     assert user.username == "alice"
 
 
