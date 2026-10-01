@@ -12,10 +12,10 @@ from typing import Any
 
 import pytest
 import uvicorn
-
-import gmail_client_impl  # Register Gmail implementation  # noqa: F401
 from mail_client_adapter.mail_client_adapter import MailClientAdapter
 from mail_client_api.message import Message
+
+import gmail_client_impl  # Register Gmail implementation  # noqa: F401
 
 # Constants
 SERVICE_HOST = "127.0.0.1"
