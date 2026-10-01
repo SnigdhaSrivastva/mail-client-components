@@ -150,6 +150,7 @@ class TestTrelloClientImpl:
 
         # create_list
         async def mock_create_list(method: str, endpoint: str, params: dict[str, str] | None=None, json_data: dict[str, Any] | None=None) -> Any:
+            assert params is not None
             return {"id": "l2", "name": params["name"], "pos": 1.0, "closed": False}
         monkeypatch.setattr(client, "_make_request", mock_create_list)
         new_list = await client.create_list("b1", "NewList")
@@ -157,6 +158,7 @@ class TestTrelloClientImpl:
 
         # update_list
         async def mock_update_list(method: str, endpoint: str, params: dict[str, str] | None=None, json_data: dict[str, Any] | None=None) -> Any:
+            assert params is not None
             return {"id": "l2", "name": params.get("name", "List2"), "idBoard": "b1", "pos": 1.0, "closed": False}
         monkeypatch.setattr(client, "_make_request", mock_update_list)
         updated_list = await client.update_list("l2", name="RenamedList")
@@ -180,6 +182,7 @@ class TestTrelloClientImpl:
 
         # create_card
         async def mock_create_card(method: str, endpoint: str, params: dict[str, str] | None=None, json_data: dict[str, Any] | None=None) -> Any:
+            assert params is not None
             return {"id": "c2", "name": params["name"], "idBoard": "b1", "pos": 0.0, "closed": False, "url": None, "desc": params.get("desc")}
         monkeypatch.setattr(client, "_make_request", mock_create_card)
         new_card = await client.create_card("l1", "Card2", description="D")
@@ -188,6 +191,7 @@ class TestTrelloClientImpl:
 
         # update_card
         async def mock_update_card(method: str, endpoint: str, params: dict[str, str] | None=None, json_data: dict[str, Any] | None=None) -> Any:
+            assert params is not None
             return {"id": "c2", "name": params.get("name", "Card2"), "idList": params.get("idList", "l1"), "idBoard": "b1", "pos": 0.0, "closed": False, "url": None, "desc": params.get("desc")}
         monkeypatch.setattr(client, "_make_request", mock_update_card)
         updated_card = await client.update_card("c2", name="Renamed", description=None)
