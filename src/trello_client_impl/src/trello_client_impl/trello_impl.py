@@ -58,8 +58,8 @@ class TrelloClientImpl(TrelloClient):
         method: str,
         endpoint: str,
         params: dict[str, str] | None = None,
-        json_data: dict | None = None,
-    ) -> dict[str, Any] | list[Any]:
+        json_data: dict[str, Any] | None = None,
+    ) -> object:
         """Make authenticated request to Trello API.
 
         Args:
@@ -69,7 +69,7 @@ class TrelloClientImpl(TrelloClient):
             json_data: JSON request body
 
         Returns:
-            dict: API response data
+            The decoded JSON response (shape depends on the endpoint)
 
         Raises:
             TrelloAPIError: If the API request fails
@@ -90,29 +90,49 @@ class TrelloClientImpl(TrelloClient):
             "token": self.token,
         })
 
-        async with aiohttp.ClientSession() as session:
-            kwargs = {"params": params}
-            if json_data:
-                kwargs["json"] = json_data
+        async with (
+            aiohttp.ClientSession() as session,
+            session.request(method, url, params=params, json=json_data) as response,
+        ):
+            if response.status == HTTPStatus.UNAUTHORIZED:
+                msg = "Authentication failed"
+                raise TrelloAuthenticationError(msg)
+            if response.status == HTTPStatus.NOT_FOUND:
+                msg = "Resource not found"
+                raise TrelloNotFoundError(msg)
+            if response.status >= HTTPStatus.BAD_REQUEST:
+                text = await response.text()
+                msg = f"API error: {text}"
+                raise TrelloAPIError(msg, response.status)
 
-            async with session.request(method, url, **kwargs) as response:
-                if response.status == HTTPStatus.UNAUTHORIZED:
-                    msg = "Authentication failed"
-                    raise TrelloAuthenticationError(msg)
-                if response.status == HTTPStatus.NOT_FOUND:
-                    msg = "Resource not found"
-                    raise TrelloNotFoundError(msg)
-                if response.status >= HTTPStatus.BAD_REQUEST:
-                    text = await response.text()
-                    msg = f"API error: {text}"
-                    raise TrelloAPIError(msg, response.status)
+            result: object = await response.json()
+            return result
 
-                return await response.json()
+    async def _request_object(
+        self,
+        method: str,
+        endpoint: str,
+        params: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Make a request whose response must be a JSON object."""
+        data = await self._make_request(method, endpoint, params=params)
+        if not isinstance(data, dict):
+            msg = f"Expected a JSON object from {endpoint}, got {type(data).__name__}"
+            raise TrelloAPIError(msg, HTTPStatus.BAD_GATEWAY)
+        return data
+
+    async def _request_list(self, method: str, endpoint: str) -> list[dict[str, Any]]:
+        """Make a request whose response must be a JSON array of objects."""
+        data = await self._make_request(method, endpoint)
+        if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
+            msg = f"Expected a JSON array of objects from {endpoint}"
+            raise TrelloAPIError(msg, HTTPStatus.BAD_GATEWAY)
+        return data
 
     # User operations
     async def get_current_user(self) -> TrelloUser:
         """Get the current authenticated user."""
-        data = await self._make_request("GET", "/members/me")
+        data = await self._request_object("GET", "/members/me")
         return TrelloUser(
             id=data["id"],
             username=data["username"],
@@ -123,7 +143,7 @@ class TrelloClientImpl(TrelloClient):
     # Board operations
     async def get_boards(self) -> list[TrelloBoard]:
         """Get all boards accessible to the current user."""
-        data = await self._make_request("GET", "/members/me/boards")
+        data = await self._request_list("GET", "/members/me/boards")
 
         boards = []
         for board_data in data:
@@ -140,7 +160,7 @@ class TrelloClientImpl(TrelloClient):
 
     async def get_board(self, board_id: str) -> TrelloBoard:
         """Get a specific board by ID."""
-        data = await self._make_request("GET", f"/boards/{board_id}")
+        data = await self._request_object("GET", f"/boards/{board_id}")
 
         return TrelloBoard(
             id=data["id"],
@@ -160,7 +180,7 @@ class TrelloClientImpl(TrelloClient):
         if description:
             params["desc"] = description
 
-        data = await self._make_request("POST", "/boards", params=params)
+        data = await self._request_object("POST", "/boards", params=params)
 
         return TrelloBoard(
             id=data["id"],
@@ -183,7 +203,7 @@ class TrelloClientImpl(TrelloClient):
         if description is not None:
             params["desc"] = description
 
-        data = await self._make_request("PUT", f"/boards/{board_id}", params=params)
+        data = await self._request_object("PUT", f"/boards/{board_id}", params=params)
 
         return TrelloBoard(
             id=data["id"],
@@ -201,7 +221,7 @@ class TrelloClientImpl(TrelloClient):
     # List operations
     async def get_lists(self, board_id: str) -> list[TrelloList]:
         """Get all lists in a board."""
-        data = await self._make_request("GET", f"/boards/{board_id}/lists")
+        data = await self._request_list("GET", f"/boards/{board_id}/lists")
 
         lists = []
         for list_data in data:
@@ -219,7 +239,7 @@ class TrelloClientImpl(TrelloClient):
     async def create_list(self, board_id: str, name: str) -> TrelloList:
         """Create a new list in a board."""
         params = {"name": name, "idBoard": board_id}
-        data = await self._make_request("POST", "/lists", params=params)
+        data = await self._request_object("POST", "/lists", params=params)
 
         return TrelloList(
             id=data["id"],
@@ -239,7 +259,7 @@ class TrelloClientImpl(TrelloClient):
         if name:
             params["name"] = name
 
-        data = await self._make_request("PUT", f"/lists/{list_id}", params=params)
+        data = await self._request_object("PUT", f"/lists/{list_id}", params=params)
 
         return TrelloList(
             id=data["id"],
@@ -252,7 +272,7 @@ class TrelloClientImpl(TrelloClient):
     # Card operations
     async def get_cards(self, list_id: str) -> list[TrelloCard]:
         """Get all cards in a list."""
-        data = await self._make_request("GET", f"/lists/{list_id}/cards")
+        data = await self._request_list("GET", f"/lists/{list_id}/cards")
 
         cards = []
         for card_data in data:
@@ -272,7 +292,7 @@ class TrelloClientImpl(TrelloClient):
 
     async def get_card(self, card_id: str) -> TrelloCard:
         """Get a specific card by ID."""
-        data = await self._make_request("GET", f"/cards/{card_id}")
+        data = await self._request_object("GET", f"/cards/{card_id}")
 
         return TrelloCard(
             id=data["id"],
@@ -296,7 +316,7 @@ class TrelloClientImpl(TrelloClient):
         if description:
             params["desc"] = description
 
-        data = await self._make_request("POST", "/cards", params=params)
+        data = await self._request_object("POST", "/cards", params=params)
 
         return TrelloCard(
             id=data["id"],
@@ -325,7 +345,7 @@ class TrelloClientImpl(TrelloClient):
         if list_id:
             params["idList"] = list_id
 
-        data = await self._make_request("PUT", f"/cards/{card_id}", params=params)
+        data = await self._request_object("PUT", f"/cards/{card_id}", params=params)
 
         return TrelloCard(
             id=data["id"],
